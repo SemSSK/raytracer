@@ -3,6 +3,8 @@ use std::time::Instant;
 use egui::{Color32, ColorImage, TextureHandle, Ui};
 use rand::{rngs::ThreadRng, Rng};
 
+const WINDOW_DIMENSIONS: (f32, f32) = (1366., 768.);
+
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
     let options = eframe::NativeOptions {
@@ -65,15 +67,17 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::SidePanel::right(egui::Id::new("right panel")).show(ctx, |ui| {
-            ui.label(format!("render time {} seconds", self.time));
-            if ui.button("Render").clicked() {
-                self.render(ui);
-            }
-        });
+        egui::SidePanel::right(egui::Id::new("right panel"))
+            .min_width(WINDOW_DIMENSIONS.0 / 4.)
+            .show(ctx, |ui| {
+                ui.label(format!("render time {} seconds", self.time));
+                if ui.button("Render").clicked() {
+                    self.render(ui);
+                }
+            });
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.with_layout(
-                egui::Layout::left_to_right(egui::Align::Center),
+                egui::Layout::centered_and_justified(egui::Direction::TopDown),
                 |ui| match &self.render {
                     Some(image) => ui.image(image, image.size_vec2()),
                     None => ui.label("No image to render"),
