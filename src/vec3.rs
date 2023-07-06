@@ -70,6 +70,23 @@ impl Vec3 {
     pub fn normalized(&self) -> Self {
         self.scale(1. / self.length())
     }
+    pub fn clamp(&self) -> Self {
+        self.clamp_lower().clamp_higher()
+    }
+    pub fn clamp_lower(&self) -> Self {
+        Vec3 {
+            x: self.x.min(1.),
+            y: self.y.min(1.),
+            z: self.z.min(1.),
+        }
+    }
+    pub fn clamp_higher(&self) -> Self {
+        Vec3 {
+            x: self.x.max(0.),
+            y: self.y.max(0.),
+            z: self.z.max(0.),
+        }
+    }
 }
 
 pub trait ConvertableToColor {
@@ -78,10 +95,9 @@ pub trait ConvertableToColor {
 
 impl ConvertableToColor for Vec3 {
     fn as_color(&self) -> Color32 {
-        Color32::from_rgb(
-            (self.x.abs() * 255.) as u8,
-            (self.y.abs() * 255.) as u8,
-            (self.z.abs() * 255.) as u8,
-        )
+        let r = self.x * 255.;
+        let g = self.y * 255.;
+        let b = self.z * 255.;
+        Color32::from_rgb(r as u8, g as u8, b as u8)
     }
 }

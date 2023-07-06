@@ -30,6 +30,7 @@ struct MyApp {
     height: usize,
     camera: Vec3,
     pub sphere: Sphere,
+    pub light_direction: Vec3,
     pixels: Vec<Color32>,
     time: f32,
 }
@@ -37,29 +38,23 @@ struct MyApp {
 impl MyApp {
     fn render(&mut self, ui: &mut Ui) {
         let now = Instant::now();
-        self.pixels.par_iter_mut().enumerate().for_each(|(i, x)| {
-            let v = get_vector_from_index(i, self.width, self.height);
-            let col = Color32::from_rgb(
-                ((1. - v.y) * 255.) as u8,
-                ((1. - v.y) * 255.) as u8,
-                (0.4 * 255.) as u8,
-            );
-            *x = col;
-        });
         let pixels = self
             .pixels
-            .par_iter()
+            .iter()
             .enumerate()
-            .map(|(i, p)| {
+            .map(|(i, _)| {
                 let viewport_pos = get_vector_from_index(i, self.width, self.height);
+                let col = Color32::BLACK;
                 let ray = Ray {
                     position: self.camera,
-                    direction: (viewport_pos - self.camera).normalized(),
+                    direction: viewport_pos - self.camera,
                 };
-                if self.sphere.find_if_collides(&ray) {
-                    Color32::LIGHT_RED
-                } else {
-                    *p
+                match self
+                    .sphere
+                    .find_color_to_display(&ray, &self.light_direction)
+                {
+                    Some(c) => c.as_color(),
+                    None => col,
                 }
             })
             .collect::<Vec<_>>();
@@ -92,7 +87,18 @@ impl Default for MyApp {
                 y: 0.,
                 z: -5.,
             },
+            light_direction: Vec3 {
+                x: -1.,
+                y: -1.,
+                z: -1.,
+            }
+            .normalized(),
             sphere: Sphere {
+                color: Vec3 {
+                    x: 0.75,
+                    y: 0.66,
+                    z: 0.45,
+                },
                 ray: 0.5,
                 center: Vec3 {
                     x: 0.,
@@ -125,16 +131,25 @@ impl eframe::App for MyApp {
                         ui.colored_label(Color32::LIGHT_GREEN, "Commands");
                         ui.end_row();
                         ui.label("Sphere ray");
-                        ui.add(egui::Slider::new(&mut self.sphere.ray, 0.0..=1.0));
+                        ui.add(egui::DragValue::new(&mut self.sphere.ray));
                         ui.end_row();
                         ui.label("Sphere x position");
-                        ui.add(egui::Slider::new(&mut self.sphere.center.x, -1.0..=1.0));
+                        ui.add(egui::DragValue::new(&mut self.sphere.center.x).speed(0.1));
                         ui.end_row();
                         ui.label("Sphere y position");
-                        ui.add(egui::Slider::new(&mut self.sphere.center.y, -1.0..=1.0));
+                        ui.add(egui::DragValue::new(&mut self.sphere.center.y).speed(0.1));
                         ui.end_row();
                         ui.label("Sphere z position");
-                        ui.add(egui::Slider::new(&mut self.sphere.center.z, 0.0..=100.));
+                        ui.add(egui::DragValue::new(&mut self.sphere.center.z).speed(0.1));
+                        ui.end_row();
+                        ui.label("Light x position");
+                        ui.add(egui::DragValue::new(&mut self.light_direction.x).speed(0.1));
+                        ui.end_row();
+                        ui.label("Light y position");
+                        ui.add(egui::DragValue::new(&mut self.light_direction.y).speed(0.1));
+                        ui.end_row();
+                        ui.label("Light z position");
+                        ui.add(egui::DragValue::new(&mut self.light_direction.z).speed(0.1));
                         ui.end_row();
                     });
                 // if ui.button("Render 🎥").clicked() {

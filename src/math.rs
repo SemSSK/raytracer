@@ -1,4 +1,7 @@
-use crate::{vec3::Vec3, WINDOW_DIMENSIONS};
+use crate::{
+    vec3::{ConvertableToColor, Vec3},
+    WINDOW_DIMENSIONS,
+};
 
 #[derive(Debug, Default)]
 pub struct Ray {
@@ -16,18 +19,20 @@ impl Ray {
 pub struct Sphere {
     pub center: Vec3,
     pub ray: f32,
+    pub color: Vec3,
 }
 
 pub trait Collidable {
-    fn find_collision_position(&self, ray: &Ray) -> Option<(Vec3, Vec3)>;
+    fn find_collision_position(&self, ray: &Ray) -> Option<Vec3>;
     fn find_if_collides(&self, ray: &Ray) -> bool {
         self.find_collision_position(ray).is_some()
     }
+    fn find_color_to_display(&self, ray: &Ray, light: &Vec3) -> Option<Vec3>;
 }
 
 impl Collidable for Sphere {
     /// taken from the equations found on this linkhttp://www.ambrnet.com/TrigoCalc/Sphere/SpherLineIntersection_.htm
-    fn find_collision_position(&self, ray: &Ray) -> Option<(Vec3, Vec3)> {
+    fn find_collision_position(&self, ray: &Ray) -> Option<Vec3> {
         let a = ray.direction.dot(&ray.direction);
         let b =
             ray.position.dot(&ray.direction.scale(2.)) - ray.direction.dot(&self.center.scale(2.));
@@ -41,7 +46,22 @@ impl Collidable for Sphere {
         }
         let t1 = (-b + delta.sqrt()) / (2. * a);
         let t2 = (-b - delta.sqrt()) / (2. * a);
-        Some((ray.calc_p(t1), ray.calc_p(t2)))
+        let (p1, p2) = (ray.calc_p(t1), ray.calc_p(t2));
+        let (n1, n2) = (p1 - self.center, p2 - self.center);
+        if n1.dot(&ray.direction) > 0. {
+            Some(p2)
+        } else {
+            Some(p1)
+        }
+    }
+
+    fn find_color_to_display(&self, ray: &Ray, light: &Vec3) -> Option<Vec3> {
+        let Some(p) = self.find_collision_position(&ray) else {
+            return None;
+        };
+        let normal = (p - self.center).normalized();
+        let d = normal.dot(&light.scale(-1.)).max(0.);
+        Some(self.color.scale(d).clamp())
     }
 }
 
