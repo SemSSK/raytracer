@@ -1,5 +1,7 @@
 use std::ops::{Add, Mul, Sub};
 
+use egui::Color32;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Vec3 {
     pub x: f32,
@@ -58,5 +60,28 @@ impl Vec3 {
             y: self.z * rhs.x - self.x * rhs.x,
             z: self.x * rhs.y - self.y * rhs.z,
         }
+    }
+    pub fn length_squared(&self) -> f32 {
+        self.dot(self)
+    }
+    pub fn length(&self) -> f32 {
+        self.length_squared().sqrt()
+    }
+    pub fn normalized(&self) -> Self {
+        self.scale(1. / self.length())
+    }
+}
+
+pub trait ConvertableToColor {
+    fn as_color(&self) -> Color32;
+}
+
+impl ConvertableToColor for Vec3 {
+    fn as_color(&self) -> Color32 {
+        Color32::from_rgb(
+            (self.x.abs() * 255.) as u8,
+            (self.y.abs() * 255.) as u8,
+            (self.z.abs() * 255.) as u8,
+        )
     }
 }

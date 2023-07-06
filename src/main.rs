@@ -7,7 +7,7 @@ use egui::{Color32, ColorImage, TextureHandle, Ui};
 use math::{get_vector_from_index, Collidable, Ray, Sphere};
 use rand::{rngs::ThreadRng, Rng};
 use rayon::prelude::*;
-use vec3::Vec3;
+use vec3::{ConvertableToColor, Vec3};
 
 const WINDOW_DIMENSIONS: (f32, f32) = (1366., 768.);
 
@@ -28,7 +28,8 @@ struct MyApp {
     render: Option<TextureHandle>,
     width: usize,
     height: usize,
-    sphere: Sphere,
+    camera: Vec3,
+    pub sphere: Sphere,
     pixels: Vec<Color32>,
     time: f32,
 }
@@ -36,27 +37,29 @@ struct MyApp {
 impl MyApp {
     fn render(&mut self, ui: &mut Ui) {
         let now = Instant::now();
-        self.pixels.par_iter_mut().for_each(|x| {
-            let mut rng = rand::thread_rng();
-            *x = Color32::from_rgb(rng.gen(), rng.gen(), rng.gen());
+        self.pixels.par_iter_mut().enumerate().for_each(|(i, x)| {
+            let v = get_vector_from_index(i, self.width, self.height);
+            let col = Color32::from_rgb(
+                ((1. - v.y) * 255.) as u8,
+                ((1. - v.y) * 255.) as u8,
+                (0.4 * 255.) as u8,
+            );
+            *x = col;
         });
         let pixels = self
             .pixels
             .par_iter()
             .enumerate()
-            .map(|(i, _)| {
+            .map(|(i, p)| {
+                let viewport_pos = get_vector_from_index(i, self.width, self.height);
                 let ray = Ray {
-                    position: get_vector_from_index(i),
-                    direction: Vec3 {
-                        x: 0.,
-                        y: 0.,
-                        z: 1.,
-                    },
+                    position: self.camera,
+                    direction: (viewport_pos - self.camera).normalized(),
                 };
                 if self.sphere.find_if_collides(&ray) {
-                    Color32::RED
+                    Color32::LIGHT_RED
                 } else {
-                    Color32::LIGHT_BLUE
+                    *p
                 }
             })
             .collect::<Vec<_>>();
@@ -84,8 +87,13 @@ impl Default for MyApp {
             height: 600,
             pixels,
             time: 0.0,
+            camera: Vec3 {
+                x: 0.,
+                y: 0.,
+                z: -5.,
+            },
             sphere: Sphere {
-                ray: 20.,
+                ray: 0.5,
                 center: Vec3 {
                     x: 0.,
                     y: 0.,
@@ -116,10 +124,22 @@ impl eframe::App for MyApp {
                         ui.end_row();
                         ui.colored_label(Color32::LIGHT_GREEN, "Commands");
                         ui.end_row();
+                        ui.label("Sphere ray");
+                        ui.add(egui::Slider::new(&mut self.sphere.ray, 0.0..=1.0));
+                        ui.end_row();
+                        ui.label("Sphere x position");
+                        ui.add(egui::Slider::new(&mut self.sphere.center.x, -1.0..=1.0));
+                        ui.end_row();
+                        ui.label("Sphere y position");
+                        ui.add(egui::Slider::new(&mut self.sphere.center.y, -1.0..=1.0));
+                        ui.end_row();
+                        ui.label("Sphere z position");
+                        ui.add(egui::Slider::new(&mut self.sphere.center.z, 0.0..=100.));
+                        ui.end_row();
                     });
-                if ui.button("Render 🎥").clicked() {
-                    self.render(ui);
-                }
+                // if ui.button("Render 🎥").clicked() {
+                self.render(ui);
+                // }
             });
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.with_layout(

@@ -45,55 +45,15 @@ impl Collidable for Sphere {
     }
 }
 
-pub fn get_vector_from_index(i: usize) -> Vec3 {
-    let w = 800;
-    let x = (i % w);
-    let y = (i / w);
+pub fn get_vector_from_index(i: usize, width: usize, height: usize) -> Vec3 {
+    let hw = (width / 2) as f32;
+    let hh = (height / 2) as f32;
+    let aspect_ratio = width as f32 / height as f32;
+    let x = (i % width) as f32 / hw - 1.;
+    let y = (i / width) as f32 / hh - 1.;
     Vec3 {
-        x: x as f32 - 400.,
-        y: y as f32 - 300.,
+        x: x as f32 * aspect_ratio,
+        y: -y as f32,
         z: 0.,
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use std::fs;
-
-    use egui::Color32;
-
-    use super::*;
-    #[test]
-    fn test_collision() {
-        let sphere = Sphere {
-            ray: 5.,
-            center: Vec3 {
-                x: 0.,
-                y: 0.,
-                z: 20.,
-            },
-        };
-        let indices = (0..(600 * 800 * 3))
-            .collect::<Vec<_>>()
-            .chunks_exact(3)
-            .enumerate()
-            .map(|(i, _)| {
-                let ray = Ray {
-                    position: get_vector_from_index(i),
-                    direction: Vec3 {
-                        x: 0.,
-                        y: 0.,
-                        z: 1.,
-                    },
-                };
-                if sphere.find_if_collides(&ray) {
-                    format!("at {} : Red", i)
-                } else {
-                    format!("at {} : Blue", i)
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        fs::write("./log.txt", indices).unwrap();
     }
 }
