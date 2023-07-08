@@ -44,6 +44,16 @@ impl Sub for Vec3 {
 }
 
 impl Vec3 {
+    pub fn from_vec3(vec4: &nalgebra::Vector3<f32>) -> Self {
+        Vec3 {
+            x: vec4.x,
+            y: vec4.y,
+            z: vec4.z,
+        }
+    }
+    pub fn to_vec3(&self) -> nalgebra::Vector3<f32> {
+        nalgebra::Vector3::new(self.x, self.y, self.z)
+    }
     pub fn scale(&self, t: f32) -> Self {
         Self {
             x: self.x * t,

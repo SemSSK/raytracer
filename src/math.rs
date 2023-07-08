@@ -1,3 +1,5 @@
+use nalgebra::Rotation3;
+
 use crate::{
     vec3::{ConvertableToColor, Vec3},
     WINDOW_DIMENSIONS,
@@ -65,15 +67,18 @@ impl Collidable for Sphere {
     }
 }
 
-pub fn get_vector_from_index(i: usize, width: usize, height: usize) -> Vec3 {
+pub fn get_vector_from_index(
+    i: usize,
+    width: usize,
+    height: usize,
+    camera: &(Vec3, Rotation3<f32>),
+) -> Vec3 {
     let hw = (width / 2) as f32;
     let hh = (height / 2) as f32;
     let aspect_ratio = width as f32 / height as f32;
     let x = (i % width) as f32 / hw - 1.;
     let y = (i / width) as f32 / hh - 1.;
-    Vec3 {
-        x: x as f32 * aspect_ratio,
-        y: -y as f32,
-        z: 0.,
-    }
+    let res = camera.1 * (nalgebra::Vector3::new(x as f32 * aspect_ratio, -y as f32, 5.))
+        + camera.0.to_vec3();
+    Vec3::from_vec3(&res)
 }

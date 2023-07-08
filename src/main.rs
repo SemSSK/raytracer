@@ -1,10 +1,13 @@
+mod camera;
 mod math;
 mod vec3;
 
-use std::time::Instant;
+use std::{f32::consts::PI, time::Instant};
 
+use camera::CameraTransform;
 use egui::{Color32, ColorImage, TextureHandle, Ui};
 use math::{get_vector_from_index, Collidable, Ray, Sphere};
+use nalgebra::Rotation3;
 use rand::{rngs::ThreadRng, Rng};
 use rayon::prelude::*;
 use vec3::{ConvertableToColor, Vec3};
@@ -28,7 +31,8 @@ struct MyApp {
     render: Option<TextureHandle>,
     width: usize,
     height: usize,
-    camera: Vec3,
+    camera: (Vec3, Rotation3<f32>),
+    pub camera_transform: CameraTransform,
     pub sphere: Sphere,
     pub light_direction: Vec3,
     pixels: Vec<Color32>,
@@ -37,17 +41,18 @@ struct MyApp {
 
 impl MyApp {
     fn render(&mut self, ui: &mut Ui) {
+        self.camera = self.camera_transform.update(&self.camera);
         let now = Instant::now();
         let pixels = self
             .pixels
-            .iter()
+            .par_iter()
             .enumerate()
             .map(|(i, _)| {
-                let viewport_pos = get_vector_from_index(i, self.width, self.height);
+                let viewport_pos = get_vector_from_index(i, self.width, self.height, &self.camera);
                 let col = Color32::BLACK;
                 let ray = Ray {
-                    position: self.camera,
-                    direction: viewport_pos - self.camera,
+                    position: self.camera.0,
+                    direction: viewport_pos - self.camera.0,
                 };
                 match self
                     .sphere
@@ -82,11 +87,15 @@ impl Default for MyApp {
             height: 600,
             pixels,
             time: 0.0,
-            camera: Vec3 {
-                x: 0.,
-                y: 0.,
-                z: -5.,
-            },
+            camera: (
+                Vec3 {
+                    x: 0.,
+                    y: 0.,
+                    z: -5.,
+                },
+                Rotation3::identity(),
+            ),
+            camera_transform: Default::default(),
             light_direction: Vec3 {
                 x: -1.,
                 y: -1.,
@@ -150,6 +159,42 @@ impl eframe::App for MyApp {
                         ui.end_row();
                         ui.label("Light z position");
                         ui.add(egui::DragValue::new(&mut self.light_direction.z).speed(0.1));
+                        ui.end_row();
+                        ui.label("Camera x rotation");
+                        ui.add(
+                            egui::Slider::new(
+                                &mut self.camera_transform.rot_x,
+                                (-PI / 2.)..=(PI / 2.),
+                            )
+                            .step_by(0.05),
+                        );
+                        ui.end_row();
+                        ui.label("Camera y rotation");
+                        ui.add(
+                            egui::Slider::new(
+                                &mut self.camera_transform.rot_y,
+                                (-PI / 2.)..=(PI / 2.),
+                            )
+                            .step_by(0.05),
+                        );
+                        ui.end_row();
+                        ui.label("Camera z rotation");
+                        ui.add(
+                            egui::Slider::new(
+                                &mut self.camera_transform.rot_z,
+                                (-PI / 2.)..=(PI / 2.),
+                            )
+                            .step_by(0.05),
+                        );
+                        ui.end_row();
+                        ui.label("Camera x position");
+                        ui.add(egui::DragValue::new(&mut self.camera_transform.trans_x).speed(0.1));
+                        ui.end_row();
+                        ui.label("Camera y position");
+                        ui.add(egui::DragValue::new(&mut self.camera_transform.trans_y).speed(0.1));
+                        ui.end_row();
+                        ui.label("Camera z position");
+                        ui.add(egui::DragValue::new(&mut self.camera_transform.trans_z).speed(0.1));
                         ui.end_row();
                     });
                 // if ui.button("Render 🎥").clicked() {
