@@ -6,11 +6,10 @@ use std::{f32::consts::PI, time::Instant};
 
 use camera::CameraTransform;
 use egui::{Color32, ColorImage, TextureHandle, Ui};
-use math::{get_vector_from_index, Collidable, Ray, Sphere};
-use nalgebra::Rotation3;
-use rand::{rngs::ThreadRng, Rng};
+use math::{get_vector_from_index, Ray, Sphere};
+use nalgebra::{Rotation3, Vector3};
 use rayon::prelude::*;
-use vec3::{ConvertableToColor, Vec3};
+use vec3::ConvertableToColor;
 
 const WINDOW_DIMENSIONS: (f32, f32) = (1366., 768.);
 
@@ -31,17 +30,18 @@ struct MyApp {
     render: Option<TextureHandle>,
     width: usize,
     height: usize,
-    camera: (Vec3, Rotation3<f32>),
+    camera: (Vector3<f32>, Rotation3<f32>),
     pub camera_transform: CameraTransform,
-    pub sphere: Sphere,
-    pub light_direction: Vec3,
+    pub scene: Vec<Sphere>,
+    pub light: Vector3<f32>,
+    pub ambiant: f32,
     pixels: Vec<Color32>,
     time: f32,
 }
 
 impl MyApp {
     fn render(&mut self, ui: &mut Ui) {
-        self.camera = self.camera_transform.update(&self.camera);
+        self.camera = self.camera_transform.update();
         let now = Instant::now();
         let pixels = self
             .pixels
@@ -54,10 +54,7 @@ impl MyApp {
                     position: self.camera.0,
                     direction: viewport_pos - self.camera.0,
                 };
-                match self
-                    .sphere
-                    .find_color_to_display(&ray, &self.light_direction)
-                {
+                match ray.cast(&self.scene, &self.light, self.ambiant) {
                     Some(c) => c.as_color(),
                     None => col,
                 }
@@ -81,40 +78,34 @@ impl Default for MyApp {
             .into_iter()
             .map(|_| Color32::WHITE)
             .collect::<Vec<_>>();
+        let scene = vec![
+            Sphere {
+                color: Vector3::new(0.75, 0.66, 0.45),
+                ray: 0.5,
+                center: Vector3::new(0., 0., 5.),
+            },
+            Sphere {
+                color: Vector3::new(0.99, 0.05, 0.99),
+                ray: 1.,
+                center: Vector3::new(0., 0., 10.),
+            },
+            Sphere {
+                color: Vector3::new(0.0, 0.45, 0.99),
+                ray: 1.,
+                center: Vector3::new(2., 0., 5.4),
+            },
+        ];
         Self {
             render: Default::default(),
             width: 800,
             height: 600,
             pixels,
             time: 0.0,
-            camera: (
-                Vec3 {
-                    x: 0.,
-                    y: 0.,
-                    z: -5.,
-                },
-                Rotation3::identity(),
-            ),
+            camera: (Vector3::new(0., 0., -5.), Rotation3::identity()),
             camera_transform: Default::default(),
-            light_direction: Vec3 {
-                x: -1.,
-                y: -1.,
-                z: -1.,
-            }
-            .normalized(),
-            sphere: Sphere {
-                color: Vec3 {
-                    x: 0.75,
-                    y: 0.66,
-                    z: 0.45,
-                },
-                ray: 0.5,
-                center: Vec3 {
-                    x: 0.,
-                    y: 0.,
-                    z: 5.,
-                },
-            },
+            light: Vector3::zeros(),
+            ambiant: 0.3,
+            scene,
         }
     }
 }
@@ -139,26 +130,14 @@ impl eframe::App for MyApp {
                         ui.end_row();
                         ui.colored_label(Color32::LIGHT_GREEN, "Commands");
                         ui.end_row();
-                        ui.label("Sphere ray");
-                        ui.add(egui::DragValue::new(&mut self.sphere.ray));
+                        ui.label("Light x");
+                        ui.add(egui::DragValue::new(&mut self.light.x).speed(0.01));
                         ui.end_row();
-                        ui.label("Sphere x position");
-                        ui.add(egui::DragValue::new(&mut self.sphere.center.x).speed(0.1));
+                        ui.label("Light y");
+                        ui.add(egui::DragValue::new(&mut self.light.y).speed(0.01));
                         ui.end_row();
-                        ui.label("Sphere y position");
-                        ui.add(egui::DragValue::new(&mut self.sphere.center.y).speed(0.1));
-                        ui.end_row();
-                        ui.label("Sphere z position");
-                        ui.add(egui::DragValue::new(&mut self.sphere.center.z).speed(0.1));
-                        ui.end_row();
-                        ui.label("Light x position");
-                        ui.add(egui::DragValue::new(&mut self.light_direction.x).speed(0.1));
-                        ui.end_row();
-                        ui.label("Light y position");
-                        ui.add(egui::DragValue::new(&mut self.light_direction.y).speed(0.1));
-                        ui.end_row();
-                        ui.label("Light z position");
-                        ui.add(egui::DragValue::new(&mut self.light_direction.z).speed(0.1));
+                        ui.label("Light z");
+                        ui.add(egui::DragValue::new(&mut self.light.z).speed(0.01));
                         ui.end_row();
                         ui.label("Camera x rotation");
                         ui.add(
