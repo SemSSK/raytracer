@@ -1,4 +1,4 @@
-use nalgebra::{Rotation3, SimdPartialOrd, Unit, Vector3};
+use nalgebra::{Rotation3, Unit, Vector3};
 
 #[derive(Debug, Default)]
 pub struct Ray {
@@ -12,17 +12,17 @@ impl Ray {
     }
     pub fn cast(
         &self,
-        scene: &Vec<Sphere>,
+        scene: &[Sphere],
         light: &Vector3<f32>,
         ambiant: f32,
     ) -> Option<Vector3<f32>> {
         scene
-            .into_iter()
+            .iter()
             .map(|collidable| {
-                let Some(p) = collidable.find_collision_position(&self) else {
+                let Some(p) = collidable.find_collision_position(self) else {
                     return None;
                 };
-                let color = collidable.find_color_to_display(&p, light, ambiant);
+                let color = collidable.find_color_to_display(light, &p, ambiant);
                 Some((p, color))
             })
             .fold((f32::INFINITY, None), |acc, col_p| match col_p {
@@ -92,14 +92,10 @@ impl Collidable for Sphere {
         ambiant: f32,
     ) -> Vector3<f32> {
         let p = col_point;
-        let sun = Vector3::new(-0.5, -0.5, -0.5);
-        let light = Unit::new_normalize(p - light);
+        let light = Unit::new_normalize(p - light).scale(-1.);
         let normal = Unit::new_normalize(p - self.center);
-        let d = normal.dot(&light.scale(-1.)).max(0.);
-        let d2 = normal.dot(&sun.scale(-1.)).max(0.);
-        self.color
-            .scale(d + ambiant + d2)
-            .simd_clamp(Vector3::new(0., 0., 0.), Vector3::new(1., 1., 1.))
+        let d_light = normal.dot(&light).max(0.);
+        self.color.scale(d_light + ambiant)
     }
 }
 
@@ -114,7 +110,30 @@ pub fn get_vector_from_index(
     let aspect_ratio = width as f32 / height as f32;
     let x = (i % width) as f32 / hw - 1.;
     let y = (i / width) as f32 / hh - 1.;
-    let res =
-        camera.1 * (nalgebra::Vector3::new(x as f32 * aspect_ratio, -y as f32, 5.)) + camera.0;
-    res
+
+    camera.1 * (nalgebra::Vector3::new(x * aspect_ratio, -y, 5.)) + camera.0
+}
+
+#[cfg(test)]
+mod test {
+    use nalgebra::Vector3;
+
+    use super::{Collidable, Ray, Sphere};
+
+    #[test]
+    fn test_color_calculation() {
+        let sphere = Sphere {
+            center: Vector3::new(0., 0., 5.),
+            ray: 2.,
+            color: Vector3::new(0.75, 0.66, 0.45),
+        };
+        let ray = Ray {
+            position: Vector3::new(0., 0., 0.),
+            direction: Vector3::new(0., 0., 0.),
+        };
+        let col = sphere
+            .find_collision_position(&ray)
+            .and_then(|p| Some(sphere.find_color_to_display(&p, &Vector3::new(0., 0., 5.), 0.4)));
+        dbg!(col);
+    }
 }

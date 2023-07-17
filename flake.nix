@@ -30,6 +30,8 @@
             rust-bin.stable.latest.default
             bacon
             udev
+            rust-analyzer
+            heaptrack
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
           LD_LIBRARY_PATH = libPath;

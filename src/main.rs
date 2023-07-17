@@ -5,7 +5,7 @@ mod vec3;
 use std::{f32::consts::PI, time::Instant};
 
 use camera::CameraTransform;
-use egui::{Color32, ColorImage, TextureHandle, Ui};
+use egui::{Color32, ColorImage, TextureHandle, Ui, Visuals};
 use math::{get_vector_from_index, Ray, Sphere};
 use nalgebra::{Rotation3, Vector3};
 use rayon::prelude::*;
@@ -40,6 +40,24 @@ struct MyApp {
 }
 
 impl MyApp {
+    fn light_dark_mode_switcher(&mut self, ctx: &egui::Context) {
+        egui::TopBottomPanel::top(egui::Id::new("top panel")).show(ctx, |ui| {
+            let icon = if ui.visuals().dark_mode {
+                "☀"
+            } else {
+                "🌙"
+            };
+            if ui.button(icon).clicked() {
+                let visuals = if ui.visuals().dark_mode {
+                    Visuals::light()
+                } else {
+                    Visuals::dark()
+                };
+                ctx.set_visuals(visuals);
+            }
+        });
+    }
+
     fn render(&mut self, ui: &mut Ui) {
         self.camera = self.camera_transform.update();
         let now = Instant::now();
@@ -74,10 +92,7 @@ impl MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let pixels = (0..(600 * 800))
-            .into_iter()
-            .map(|_| Color32::WHITE)
-            .collect::<Vec<_>>();
+        let pixels = (0..(600 * 800)).map(|_| Color32::WHITE).collect::<Vec<_>>();
         let scene = vec![
             Sphere {
                 color: Vector3::new(0.75, 0.66, 0.45),
@@ -112,6 +127,7 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.light_dark_mode_switcher(ctx);
         egui::SidePanel::right(egui::Id::new("right panel"))
             .min_width(WINDOW_DIMENSIONS.0 / 4.)
             .show(ctx, |ui| {
