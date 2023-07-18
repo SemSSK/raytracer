@@ -187,31 +187,13 @@ impl eframe::App for MyApp {
                         ui.add(egui::DragValue::new(&mut self.light.z).speed(0.01));
                         ui.end_row();
                         ui.label("Camera x rotation");
-                        ui.add(
-                            egui::Slider::new(
-                                &mut self.camera_transform.rot_x,
-                                (-PI / 2.)..=(PI / 2.),
-                            )
-                            .step_by(0.05),
-                        );
+                        ui.add(egui::DragValue::new(&mut self.camera_transform.rot_x).speed(0.05));
                         ui.end_row();
                         ui.label("Camera y rotation");
-                        ui.add(
-                            egui::Slider::new(
-                                &mut self.camera_transform.rot_y,
-                                (-PI / 2.)..=(PI / 2.),
-                            )
-                            .step_by(0.05),
-                        );
+                        ui.add(egui::DragValue::new(&mut self.camera_transform.rot_y).speed(0.05));
                         ui.end_row();
                         ui.label("Camera z rotation");
-                        ui.add(
-                            egui::Slider::new(
-                                &mut self.camera_transform.rot_z,
-                                (-PI / 2.)..=(PI / 2.),
-                            )
-                            .step_by(0.05),
-                        );
+                        ui.add(egui::DragValue::new(&mut self.camera_transform.rot_z).speed(0.05));
                         ui.end_row();
                         ui.label("Camera x position");
                         ui.add(egui::DragValue::new(&mut self.camera_transform.trans_x).speed(0.1));
