@@ -2,7 +2,7 @@ mod camera;
 mod math;
 mod vec3;
 
-use std::{f32::consts::PI, time::Instant};
+use std::{f32::consts::PI, fmt::format, time::Instant};
 
 use camera::CameraTransform;
 use egui::{Color32, ColorImage, TextureHandle, Ui, Visuals};
@@ -40,6 +40,36 @@ struct MyApp {
 }
 
 impl MyApp {
+    fn scene_ui(&mut self, ui: &mut Ui, panel_width: f32) {
+        for (i, sphere) in &mut (self.scene.iter_mut().enumerate()) {
+            ui.collapsing(format!("Sphere {}", i), |ui| {
+                egui::Grid::new("my_grid")
+                    .num_columns(2)
+                    .min_col_width(panel_width / 3.)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        ui.label("x position");
+                        ui.add(egui::DragValue::new(&mut sphere.center.x).speed(0.1));
+                        ui.end_row();
+                        ui.label("y position");
+                        ui.add(egui::DragValue::new(&mut sphere.center.y).speed(0.1));
+                        ui.end_row();
+                        ui.label("z position");
+                        ui.add(egui::DragValue::new(&mut sphere.center.z).speed(0.1));
+                        ui.end_row();
+                        ui.label("ray");
+                        ui.add(egui::DragValue::new(&mut sphere.ray).speed(0.1));
+                        ui.end_row();
+                        ui.label("color");
+                        let mut color = [sphere.color.x, sphere.color.y, sphere.color.z];
+                        ui.color_edit_button_rgb(&mut color);
+                        sphere.color = Vector3::from_column_slice(&color);
+                        ui.end_row();
+                    })
+            });
+        }
+    }
+
     fn light_dark_mode_switcher(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top(egui::Id::new("top panel")).show(ctx, |ui| {
             let icon = if ui.visuals().dark_mode {
@@ -96,13 +126,13 @@ impl Default for MyApp {
         let scene = vec![
             Sphere {
                 color: Vector3::new(0.75, 0.66, 0.45),
-                ray: 0.5,
-                center: Vector3::new(0., 0., 5.),
+                ray: 1.,
+                center: Vector3::new(0., 0., 3.),
             },
             Sphere {
                 color: Vector3::new(0.0, 0.45, 0.99),
-                ray: 1.,
-                center: Vector3::new(2., 0., 5.4),
+                ray: 85.,
+                center: Vector3::new(0., -86.5, 3.),
             },
         ];
         Self {
@@ -121,14 +151,20 @@ impl Default for MyApp {
 }
 
 impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        let panel_width = frame.info().window_info.size.x / 6.;
         self.light_dark_mode_switcher(ctx);
+        egui::SidePanel::left(egui::Id::new("left panel"))
+            .min_width(panel_width)
+            .show(ctx, |ui| {
+                self.scene_ui(ui, panel_width);
+            });
         egui::SidePanel::right(egui::Id::new("right panel"))
-            .min_width(WINDOW_DIMENSIONS.0 / 4.)
+            .min_width(panel_width)
             .show(ctx, |ui| {
                 egui::Grid::new("my_grid")
                     .num_columns(2)
-                    .spacing([40.0, 4.0])
+                    .min_col_width(panel_width / 3.)
                     .striped(true)
                     .show(ui, |ui| {
                         ui.colored_label(Color32::LIGHT_BLUE, "Informations");
