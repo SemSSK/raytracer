@@ -41,6 +41,9 @@ struct MyApp {
 
 impl MyApp {
     fn scene_ui(&mut self, ui: &mut Ui, panel_width: f32) {
+        ui.add_space(10.);
+        ui.heading("Scene menu");
+        ui.add_space(10.);
         for (i, sphere) in &mut (self.scene.iter_mut().enumerate()) {
             ui.collapsing(format!("Sphere {}", i), |ui| {
                 egui::Grid::new("my_grid")
@@ -167,7 +170,7 @@ impl eframe::App for MyApp {
                     .min_col_width(panel_width / 3.)
                     .striped(true)
                     .show(ui, |ui| {
-                        ui.colored_label(Color32::LIGHT_BLUE, "Informations");
+                        ui.heading("Informations");
                         ui.end_row();
                         ui.label("Time to render in seconds");
                         ui.label(format!("{}", self.time));
@@ -175,7 +178,8 @@ impl eframe::App for MyApp {
                         ui.label("frames per second (fps)");
                         ui.label(format!("{}", 1. / self.time));
                         ui.end_row();
-                        ui.colored_label(Color32::LIGHT_GREEN, "Commands");
+
+                        ui.heading("directional Light Menu");
                         ui.end_row();
                         ui.label("Light x");
                         ui.add(egui::DragValue::new(&mut self.light.x).speed(0.01));
@@ -186,6 +190,11 @@ impl eframe::App for MyApp {
                         ui.label("Light z");
                         ui.add(egui::DragValue::new(&mut self.light.z).speed(0.01));
                         ui.end_row();
+
+                        ui.heading("Camera menu");
+                        ui.end_row();
+                        ui.colored_label(Color32::GREEN, "Camera rotation");
+                        ui.end_row();
                         ui.label("Camera x rotation");
                         ui.add(egui::DragValue::new(&mut self.camera_transform.rot_x).speed(0.05));
                         ui.end_row();
@@ -194,6 +203,9 @@ impl eframe::App for MyApp {
                         ui.end_row();
                         ui.label("Camera z rotation");
                         ui.add(egui::DragValue::new(&mut self.camera_transform.rot_z).speed(0.05));
+                        ui.end_row();
+
+                        ui.colored_label(Color32::GREEN, "Camera position");
                         ui.end_row();
                         ui.label("Camera x position");
                         ui.add(egui::DragValue::new(&mut self.camera_transform.trans_x).speed(0.1));
