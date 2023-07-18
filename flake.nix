@@ -31,7 +31,7 @@
             bacon
             udev
             rust-analyzer
-            heaptrack
+            cargo-flamegraph
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
           LD_LIBRARY_PATH = libPath;

@@ -63,7 +63,7 @@ impl MyApp {
         let now = Instant::now();
         let pixels = self
             .pixels
-            .par_iter()
+            .iter()
             .enumerate()
             .map(|(i, _)| {
                 let viewport_pos = get_vector_from_index(i, self.width, self.height, &self.camera);
@@ -72,12 +72,13 @@ impl MyApp {
                     position: self.camera.0,
                     direction: viewport_pos - self.camera.0,
                 };
-                match ray.cast(&self.scene, &self.light, self.ambiant) {
+                match ray.cast(&self.scene, &self.light, self.ambiant, 2) {
                     Some(c) => c.as_color(),
                     None => col,
                 }
             })
             .collect::<Vec<_>>();
+        self.time = now.elapsed().as_secs_f32();
         self.render = Some(ui.ctx().load_texture(
             "render",
             ColorImage {
@@ -86,7 +87,6 @@ impl MyApp {
             },
             Default::default(),
         ));
-        self.time = now.elapsed().as_secs_f32();
     }
 }
 
@@ -98,11 +98,6 @@ impl Default for MyApp {
                 color: Vector3::new(0.75, 0.66, 0.45),
                 ray: 0.5,
                 center: Vector3::new(0., 0., 5.),
-            },
-            Sphere {
-                color: Vector3::new(0.99, 0.05, 0.99),
-                ray: 1.,
-                center: Vector3::new(0., 0., 10.),
             },
             Sphere {
                 color: Vector3::new(0.0, 0.45, 0.99),
@@ -119,7 +114,7 @@ impl Default for MyApp {
             camera: (Vector3::new(0., 0., -5.), Rotation3::identity()),
             camera_transform: Default::default(),
             light: Vector3::zeros(),
-            ambiant: 0.3,
+            ambiant: 0.15,
             scene,
         }
     }
