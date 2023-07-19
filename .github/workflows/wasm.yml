@@ -3,7 +3,7 @@ name: Continuous deployment
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     workflows: [Continuous integration]
     types: [completed]
 
