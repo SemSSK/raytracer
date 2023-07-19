@@ -27,11 +27,15 @@
         devShell = with pkgs; mkShell {
           buildInputs = [
             pkg-config
-            rust-bin.stable.latest.default.override {
-              targets = ["wasm32-unknown-unknown" "x86_64-unknown-linux-gnu"];
-            }
+            (rust-bin.stable.latest.default.override {
+              targets = [
+                "wasm32-unknown-unknown" 
+                "x86_64-unknown-linux-gnu"
+              ];
+            })
             bacon
             udev
+            trunk
             rust-analyzer
             cargo-flamegraph
           ];

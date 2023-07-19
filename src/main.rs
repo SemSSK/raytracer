@@ -8,8 +8,9 @@ use camera::CameraTransform;
 use egui::{Color32, ColorImage, TextureHandle, Ui, Visuals};
 use math::{get_vector_from_index, Ray, Sphere};
 use nalgebra::{Rotation3, Vector3};
-use rayon::prelude::*;
 use vec3::ConvertableToColor;
+
+#[cfg(not(target_arch = "wasm32"))]
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
@@ -23,6 +24,22 @@ fn main() -> Result<(), eframe::Error> {
         options,
         Box::new(|_cc| Box::<MyApp>::default()),
     )
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+    let web_options = eframe::WebOptions::default();
+    wasm_bindgen_futures::spawn_local(async {
+        eframe::WebRunner::new()
+            .start(
+                "the_canvas_id", // hardcode it
+                web_options,
+                Box::new(|_cc| Box::<MyApp>::default()),
+            )
+            .await
+            .expect("failed to start eframe");
+    });
 }
 
 struct MyApp {
@@ -169,7 +186,16 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        #[cfg(not(target_arch = "wasm32"))]
         let panel_width = frame.info().window_info.size.x / 6.;
+        #[cfg(target_arch = "wasm32")]
+        let panel_width = (web_sys::window()
+            .unwrap()
+            .inner_width()
+            .unwrap()
+            .as_f64()
+            .unwrap()
+            / 6.) as f32;
         self.light_dark_mode_switcher(ctx);
         egui::SidePanel::left(egui::Id::new("left panel"))
             .min_width(panel_width)
