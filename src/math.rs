@@ -1,4 +1,11 @@
 use nalgebra::{Rotation3, Unit, Vector3};
+use rand::Rng;
+
+#[derive(Debug, Default)]
+pub struct Material {
+    pub roughness: f32,
+    pub metalic: f32,
+}
 
 pub struct HitPayload<'a> {
     position: Vector3<f32>,
@@ -26,10 +33,12 @@ impl Ray {
     pub fn cast(
         &self,
         scene: &[Sphere],
+        materials: &[Material],
         light: &Vector3<f32>,
         ambiant: f32,
         bounces: u32,
     ) -> Option<Vector3<f32>> {
+        let mut rng = rand::thread_rng();
         if bounces == 0 {
             return None;
         }
@@ -54,7 +63,7 @@ impl Ray {
                 Some((
                     Ray {
                         direction: hit_payload.normal_unnormalized,
-                        position: hit_payload.position + hit_payload.normal_unnormalized.scale(0.01)
+                        position: hit_payload.position + hit_payload.normal_unnormalized.scale(0.01) + nalgebra::Vector3::new(rng.gen_range((-0.5)..=(0.5)), rng.gen_range((-0.5)..=(0.5)), rng.gen_range((-0.5)..=(0.5))) * materials[hit_payload.collidable.get_material()].roughness
                     },hit_payload
                         .collidable
                         .find_color_to_display(hit_payload, &light, ambiant)
@@ -62,7 +71,7 @@ impl Ray {
             }) else {
                 return None;
             };
-        let sum_color = match new_ray.cast(scene, light, ambiant, bounces - 1) {
+        let sum_color = match new_ray.cast(scene, materials, light, ambiant, bounces - 1) {
             Some(color) => color,
             None => Vector3::zeros(),
         };
@@ -75,6 +84,7 @@ pub struct Sphere {
     pub center: Vector3<f32>,
     pub ray: f32,
     pub color: Vector3<f32>,
+    pub material_index: usize,
 }
 
 pub trait Collidable {
@@ -88,6 +98,7 @@ pub trait Collidable {
         light: &Vector3<f32>,
         ambiant: f32,
     ) -> Vector3<f32>;
+    fn get_material(&self) -> usize;
 }
 
 impl Collidable for Sphere {
@@ -131,6 +142,10 @@ impl Collidable for Sphere {
         let light = Unit::new_normalize(p - light).scale(-1.);
         let d_light = normal.dot(&light).max(0.);
         self.color.scale(d_light + ambiant)
+    }
+
+    fn get_material(&self) -> usize {
+        self.material_index
     }
 }
 

@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use camera::CameraTransform;
 use egui::{Color32, ColorImage, TextureHandle, Ui, Visuals};
-use math::{get_vector_from_index, Ray, Sphere};
+use math::{get_vector_from_index, Material, Ray, Sphere};
 use nalgebra::{Rotation3, Vector3};
 use vec3::ConvertableToColor;
 
@@ -15,8 +15,7 @@ use vec3::ConvertableToColor;
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::Vec2 { x: 1366., y: 768. }),
-        min_window_size: Some(egui::Vec2 { x: 1366., y: 768. }),
+        fullscreen: true,
         ..Default::default()
     };
     eframe::run_native(
@@ -49,6 +48,7 @@ struct MyApp {
     camera: (Vector3<f32>, Rotation3<f32>),
     pub camera_transform: CameraTransform,
     pub scene: Vec<Sphere>,
+    pub materials: Vec<Material>,
     pub light: Vector3<f32>,
     pub ambiant: f32,
     pixels: Vec<Color32>,
@@ -85,6 +85,15 @@ impl MyApp {
                         ui.color_edit_button_rgb(&mut color);
                         sphere.color = Vector3::from_column_slice(&color);
                         ui.end_row();
+                        ui.label("material");
+                        ui.add(
+                            egui::Slider::new(
+                                &mut sphere.material_index,
+                                0..=(self.materials.len() - 1),
+                            )
+                            .step_by(0.1),
+                        );
+                        ui.end_row();
                     });
                 if ui.button("🗙").clicked() {
                     delete = Some(i);
@@ -96,6 +105,41 @@ impl MyApp {
                 center: Vector3::zeros(),
                 ray: 1.,
                 color: Vector3::new(1., 1., 1.),
+                material_index: 0,
+            });
+        }
+    }
+    fn materials_ui(&mut self, ui: &mut Ui, panel_width: f32) {
+        let mut delete = None;
+        ui.add_space(10.);
+        ui.heading("Matrials menu");
+        ui.add_space(10.);
+        for (i, material) in &mut (self.materials.iter_mut().enumerate()) {
+            ui.collapsing(format!("Material {}", i), |ui| {
+                egui::Grid::new("my_grid")
+                    .num_columns(2)
+                    .min_col_width(panel_width / 3.)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        ui.label("Roughness");
+                        ui.add(
+                            egui::Slider::new(&mut material.roughness, (0.0)..=(1.0)).step_by(0.1),
+                        );
+                        ui.end_row();
+                        ui.label("Mettalic");
+                        ui.add(
+                            egui::Slider::new(&mut material.metalic, (0.0)..=(1.0)).step_by(0.1),
+                        );
+                        ui.end_row();
+                    });
+                if ui.button("🗙").clicked() {
+                    delete = Some(i);
+                }
+            });
+        }
+        if ui.button("➕").clicked() {
+            self.materials.push(Material {
+                ..Default::default()
             });
         }
 
@@ -137,7 +181,7 @@ impl MyApp {
                     position: self.camera.0,
                     direction: viewport_pos - self.camera.0,
                 };
-                match ray.cast(&self.scene, &self.light, self.ambiant, 2) {
+                match ray.cast(&self.scene, &self.materials, &self.light, self.ambiant, 5) {
                     Some(c) => c.as_color(),
                     None => col,
                 }
@@ -166,13 +210,18 @@ impl Default for MyApp {
                 color: Vector3::new(0.75, 0.66, 0.45),
                 ray: 1.,
                 center: Vector3::new(0., 0., 3.),
+                material_index: 0,
             },
             Sphere {
                 color: Vector3::new(0.0, 0.45, 0.99),
                 ray: 85.,
                 center: Vector3::new(0., -86.5, 3.),
+                material_index: 0,
             },
         ];
+        let materials = vec![Material {
+            ..Default::default()
+        }];
         Self {
             render: Default::default(),
             width: 800,
@@ -184,6 +233,7 @@ impl Default for MyApp {
             light: Vector3::zeros(),
             ambiant: 0.15,
             scene,
+            materials,
         }
     }
 }
@@ -205,6 +255,7 @@ impl eframe::App for MyApp {
             .min_width(panel_width)
             .show(ctx, |ui| {
                 self.scene_ui(ui, panel_width);
+                self.materials_ui(ui, panel_width);
             });
         egui::SidePanel::right(egui::Id::new("right panel"))
             .min_width(panel_width)
