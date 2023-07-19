@@ -1,7 +1,8 @@
 # in .github/workflows/continuous_deployment.yml
 name: Continuous deployment
+
 on:
-  workflow_run:
+  push:
     branches: [main]
     workflows: [Continuous integration]
     types: [completed]
