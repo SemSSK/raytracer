@@ -15,6 +15,7 @@ fn main() -> Result<(), eframe::Error> {
     env_logger::init();
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::Vec2 { x: 1366., y: 768. }),
+        min_window_size: Some(egui::Vec2 { x: 1366., y: 768. }),
         ..Default::default()
     };
     eframe::run_native(
