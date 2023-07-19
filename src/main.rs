@@ -41,6 +41,7 @@ struct MyApp {
 
 impl MyApp {
     fn scene_ui(&mut self, ui: &mut Ui, panel_width: f32) {
+        let mut delete = None;
         ui.add_space(10.);
         ui.heading("Scene menu");
         ui.add_space(10.);
@@ -68,8 +69,22 @@ impl MyApp {
                         ui.color_edit_button_rgb(&mut color);
                         sphere.color = Vector3::from_column_slice(&color);
                         ui.end_row();
-                    })
+                    });
+                if ui.button("🗙").clicked() {
+                    delete = Some(i);
+                }
             });
+        }
+        if ui.button("➕").clicked() {
+            self.scene.push(Sphere {
+                center: Vector3::zeros(),
+                ray: 1.,
+                color: Vector3::new(1., 1., 1.),
+            });
+        }
+
+        if let Some(i) = delete {
+            self.scene.remove(i);
         }
     }
 
