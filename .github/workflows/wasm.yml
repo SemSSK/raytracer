@@ -12,7 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
 
-    - name: Build and Deploy app to wasm
-      uses: semssk/raytracer@v1.0.0
+      - uses: jetli/trunk-action@v0.1.0
+      - uses: jetli/wasm-bindgen-action@v0.1.0
+
+      - uses: actions/checkout@v2
+
+      - run: trunk build --release
+
+      - uses: semssk/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: $
+          publish_dir: ./dist
