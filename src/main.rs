@@ -2,7 +2,7 @@ mod camera;
 mod math;
 mod vec3;
 
-use std::{f32::consts::PI, fmt::format, time::Instant};
+use std::time::Instant;
 
 use camera::CameraTransform;
 use egui::{Color32, ColorImage, TextureHandle, Ui, Visuals};
@@ -10,8 +10,6 @@ use math::{get_vector_from_index, Ray, Sphere};
 use nalgebra::{Rotation3, Vector3};
 use rayon::prelude::*;
 use vec3::ConvertableToColor;
-
-const WINDOW_DIMENSIONS: (f32, f32) = (1366., 768.);
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();

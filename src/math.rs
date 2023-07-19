@@ -1,4 +1,3 @@
-use env_logger::fmt::Color;
 use nalgebra::{Rotation3, Unit, Vector3};
 
 pub struct HitPayload<'a> {
