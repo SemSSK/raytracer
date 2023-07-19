@@ -124,7 +124,7 @@ impl MyApp {
 
     fn render(&mut self, ui: &mut Ui) {
         self.camera = self.camera_transform.update();
-        let now = Instant::now();
+        // let now = Instant::now();
         let pixels = self
             .pixels
             .iter()
@@ -142,7 +142,7 @@ impl MyApp {
                 }
             })
             .collect::<Vec<_>>();
-        self.time = now.elapsed().as_secs_f32();
+        // self.time = now.elapsed().as_secs_f32();
         self.render = Some(ui.ctx().load_texture(
             "render",
             ColorImage {
