@@ -1907,6 +1907,7 @@ dependencies = [
  "eframe",
  "egui",
  "env_logger",
+ "js-sys",
  "log",
  "nalgebra",
  "rand",

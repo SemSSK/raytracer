@@ -15,6 +15,7 @@ use vec3::ConvertableToColor;
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
     let options = eframe::NativeOptions {
+        min_window_size: Some(egui::vec2(1000., 600.)),
         fullscreen: true,
         ..Default::default()
     };
@@ -65,7 +66,7 @@ impl MyApp {
             ui.collapsing(format!("Sphere {}", i), |ui| {
                 egui::Grid::new("my_grid")
                     .num_columns(2)
-                    .min_col_width(panel_width / 3.)
+                    .min_col_width(panel_width / 2.)
                     .striped(true)
                     .show(ui, |ui| {
                         ui.label("x position");
@@ -118,7 +119,7 @@ impl MyApp {
             ui.collapsing(format!("Material {}", i), |ui| {
                 egui::Grid::new("my_grid")
                     .num_columns(2)
-                    .min_col_width(panel_width / 3.)
+                    .min_col_width(panel_width / 2.)
                     .striped(true)
                     .show(ui, |ui| {
                         ui.label("Roughness");
@@ -204,7 +205,7 @@ impl MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let pixels = (0..(600 * 800)).map(|_| Color32::WHITE).collect::<Vec<_>>();
+        let pixels = (0..(400 * 600)).map(|_| Color32::WHITE).collect::<Vec<_>>();
         let scene = vec![
             Sphere {
                 color: Vector3::new(0.75, 0.66, 0.45),
@@ -224,11 +225,11 @@ impl Default for MyApp {
         }];
         Self {
             render: Default::default(),
-            width: 800,
-            height: 600,
+            width: 600,
+            height: 400,
             pixels,
             time: 0.0,
-            camera: (Vector3::new(0., 0., -5.), Rotation3::identity()),
+            camera: (Vector3::new(0., 0., -10.), Rotation3::identity()),
             camera_transform: Default::default(),
             light: Vector3::zeros(),
             ambiant: 0.15,
@@ -241,7 +242,7 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         #[cfg(not(target_arch = "wasm32"))]
-        let panel_width = frame.info().window_info.size.x / 6.;
+        let panel_width = frame.info().window_info.size.x / 8.;
         #[cfg(target_arch = "wasm32")]
         let panel_width = (web_sys::window()
             .unwrap()
@@ -262,15 +263,12 @@ impl eframe::App for MyApp {
             .show(ctx, |ui| {
                 egui::Grid::new("my_grid")
                     .num_columns(2)
-                    .min_col_width(panel_width / 3.)
+                    .min_col_width(panel_width / 2.)
                     .striped(true)
                     .show(ui, |ui| {
                         ui.heading("Informations");
                         ui.end_row();
-                        ui.label("Time to render in seconds");
-                        ui.label(format!("{}", self.time));
-                        ui.end_row();
-                        ui.label("frames per second (fps)");
+                        ui.label("Fps");
                         ui.label(format!("{}", 1. / self.time));
                         ui.end_row();
 

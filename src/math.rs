@@ -1,5 +1,25 @@
 use nalgebra::{Rotation3, Unit, Vector3};
+#[cfg(not(target_arch = "wasm32"))]
 use rand::Rng;
+
+#[cfg(not(target_arch = "wasm32"))]
+fn get_random_vector() -> Vector3<f32> {
+    let mut rng = rand::thread_rng();
+    Vector3::new(
+        rng.gen_range((-0.5)..=(0.5)),
+        rng.gen_range((-0.5)..=(0.5)),
+        rng.gen_range((-0.5)..=(0.5)),
+    )
+}
+
+#[cfg(target_arch = "wasm32")]
+fn get_random_vector() -> Vector3<f32> {
+    Vector3::new(
+        (js_sys::Math::random() - 0.5) as f32,
+        (js_sys::Math::random() - 0.5) as f32,
+        (js_sys::Math::random() - 0.5) as f32,
+    )
+}
 
 #[derive(Debug, Default)]
 pub struct Material {
@@ -38,7 +58,6 @@ impl Ray {
         ambiant: f32,
         bounces: u32,
     ) -> Option<Vector3<f32>> {
-        let mut rng = rand::thread_rng();
         if bounces == 0 {
             return None;
         }
@@ -63,7 +82,7 @@ impl Ray {
                 Some((
                     Ray {
                         direction: hit_payload.normal_unnormalized,
-                        position: hit_payload.position + hit_payload.normal_unnormalized.scale(0.01) + nalgebra::Vector3::new(rng.gen_range((-0.5)..=(0.5)), rng.gen_range((-0.5)..=(0.5)), rng.gen_range((-0.5)..=(0.5))) * materials[hit_payload.collidable.get_material()].roughness
+                        position: hit_payload.position + hit_payload.normal_unnormalized.scale(0.01) + get_random_vector() * materials[hit_payload.collidable.get_material()].roughness
                     },hit_payload
                         .collidable
                         .find_color_to_display(hit_payload, &light, ambiant)
